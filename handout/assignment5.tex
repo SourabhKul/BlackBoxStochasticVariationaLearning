@@ -1,0 +1,213 @@
+\documentclass[11pt]{article}
+
+\oddsidemargin=0in
+\evensidemargin=0in
+\textwidth=6.3in
+\topmargin=-0.5in
+\textheight=9in
+
+\parindent=0in
+%\pagestyle{empty}
+
+\input{testpoints}
+
+\usepackage{graphicx}
+\usepackage[english]{babel}
+\usepackage[latin1]{inputenc}
+\usepackage{times}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{subfigure}
+\usepackage{algorithmic}
+\usepackage{algorithm}
+\usepackage{url}
+
+\usepackage{xr}
+\externaldocument{fa-notes}
+
+\newcommand{\argmax}{\mathop{\arg\max}}
+\newcommand{\deriv}[2]{\frac{\partial{#1}}{\partial {#2}} }
+\newcommand{\dsep}{\mbox{dsep}}
+\newcommand{\Pa}{\mathop{Pa}}
+\newcommand{\ND}{\mbox{ND}}
+\newcommand{\De}{\mbox{De}}
+\newcommand{\Ch}{\mbox{Ch}}
+\newcommand{\graphG}{{\mathcal{G}}}
+\newcommand{\graphH}{{\mathcal{H}}}
+\newcommand{\setA}{\mathcal{A}}
+\newcommand{\setB}{\mathcal{B}}
+\newcommand{\setS}{\mathcal{S}}
+\newcommand{\setV}{\mathcal{V}}
+\DeclareMathOperator*{\union}{\bigcup}
+\DeclareMathOperator*{\intersection}{\bigcap}
+\DeclareMathOperator*{\Val}{Val}
+\newcommand{\mbf}[1]{{\mathbf{#1}}}
+\newcommand{\eq}{\!=\!}
+\newcommand{\cut}[1]{{}}
+
+\begin{document}
+
+%%%(change to appropriate class and semester)
+{\centering
+  \rule{6.3in}{2pt}
+  \vspace{1em}
+  \Large{
+    CS688: Graphical Models - Spring 2018\\
+    Assignment 5\\
+  }
+  \vspace{1em}
+  Assigned: Tuesday, April 17th. Due: Tuesday, May 1st 11:59pm\\
+  \vspace{0.1em}
+  \rule{6.3in}{1.5pt}
+}
+\vspace{1pc}
+
+\textbf{Getting Started:} You should complete the assignment using your own installation of Python 2.7. The only modules you are permitted to use in your implementations are Numpy, SciPy, and Autograd (\url{https://github.com/HIPS/autograd}). To get started with the code portions of the assignment, download the assignment archive from Moodle and unzip the file. The data files for this assignment are in the \textit{data} directory. Code templates are in the \texttt{code} directory.\\
+
+\textbf{Deliverables:} This assignment has two types of deliverables: a report and code files.
+
+\begin{itemize}
+\item \textbf{Report: } The solution report will give your answers to the homework questions. Items that you should include in your report are marked with \textbf{(report)}. The maximum length of the report is 5 pages in 11 point font, including all figures and tables. You can use any software to create your report, but your report must be submitted in PDF format. You will upload the PDF of your report to Gradescope under \verb|HW05-Report| for grading. It is strongly recommended that you typeset your report. To assist with this if you wish to use Latex, the Latex source of the handout is also included in the homework archive.
+
+\item \textbf{Code: } The second deliverable is your code. Items that you should include in your code are marked with \textbf{(code)}.  Your code must be Python 2.7 (no iPython notebooks, other formats, or code from other versions of Python). You will upload a zip file (not rar, bz2 or other compressed format) containing all of your code to Gradescope under \verb|HW05-Programming|.  When unzipped, your zip file should produce a directory called \verb|code|. Do not upload the data directory to Gradescope.
+
+\end{itemize}
+\vspace{0.5em}
+
+\textbf{Academic Honesty Statement:} Copying solutions from external
+sources (books, web pages, etc.) or other students is considered
+cheating. Sharing your solutions with other students is also
+considered cheating. Collaboration indistinguishable from copying is a violation 
+of the course's collaboration policy and will be treated as cheating.
+Any detected cheating will result in a grade of 0
+on the assignment for all students involved, and potentially a grade
+of F in the course.\\
+
+\textbf{Introduction:} In this assignment, you will experiment with 
+exact and approximate inference and learning for the factor analysis model. 
+Factor analysis (FA) is a Gaussian latent variable model with Gaussian visible variables. 
+It supports exact inference and marginal likelihood maximization with multiple
+latent random variables. This allows for approximate inference methods
+to be compared to exact inference methods. A tutorial introduction to
+factor analysis is provided in the accompanying notes. The experiments
+will focus on the use of factor analysis as a topic modeling tool. The implementations
+will include both  exact and variational methods, including
+stochastic black box methods. We will use the Autograd package
+for automatic differentiation support.  It is recommended that you start
+by reading the Autograd documentation, as well as the Autograd
+back box stochastic variational inference examples: 
+\url{https://github.com/HIPS/autograd}.
+\\
+
+
+\begin{problem}{25} \textbf{Derivations:} Perform the following derivations. All equation numbers refer to the accompanying FA notes. Show your work. (report)\\
+
+\newpart{5} Starting from the definition of the model in terms of $P_{\theta}(\mbf{Z}=\mbf{z})$ and $P_{\theta}(\mbf{X}=\mbf{x}|\mbf{Z}=\mbf{z})$ shown in Equations \ref{eq:pz} and \ref{eq:pxgz}, derive the joint distribution for $P_{\theta}(\mbf{X}=\mbf{x},\mbf{Z}=\mbf{z})$ shown in Equation \ref{eq:pxz2}.\\
+
+\newpart{10} Starting from the definition of the joint distribution for $P_{\theta}(\mbf{X}=\mbf{x},\mbf{Z}=\mbf{z})$ shown in Equation \ref{eq:pxz2}, derive the posterior distribution on $\mbf{Z}$, $P_{\theta}(\mbf{Z}=\mbf{z}|\mbf{X}=\mbf{x})$ shown in Equation \ref{eq:pzgx}.\\
+
+\newpart{10} The true posterior on $\mbf{Z}$ is Gaussian with a general $K\times K$ covariance matrix. Suppose we
+decide to approximate $P_{\theta}(\mbf{Z}=\mbf{z}|\mbf{X}=\mbf{x})$ using the distribution $Q_{\phi}(\mbf{Z}=\mbf{z})=\mathcal{N}(\mbf{z};\mbf{m},\mbf{S})$
+where $\mbf{S}$ is a diagonal covariance matrix (i.e., $\mbf{S}_{kk}>0$, $\mbf{S}_{kj}=0$ for $k\neq j$). 
+Derive the optimal variational parameter values $\mbf{m}$ and $\mbf{S}$ of $Q_{\phi}(\mbf{Z}=\mbf{z})$ by
+analytically minimizing the objective function shown in Equation \ref{eq:KLPQ}.
+
+\end{problem}
+
+
+\begin{problem}{30} \textbf{Implementations:} Implement the following functions (code). You may add
+	any additional methods you require. Note that several of the objective functions will need to be wrapped
+	for use with an optimizer.\\
+
+\newpart{5} Implement the function \verb|joint_likelihood|, which computes the joint log likelihood
+of a collection of visible and latent variable values. See Equation \ref{eq:pxz}.\\
+
+\newpart{5} Implement the function \verb|marginal_likelihood|, which computes the exact marginal log likelihood
+of a collection of visible variable values. See Equation \ref{eq:px}.\\
+
+\newpart{5} Implement the function \verb|svi_obj|, which computes stochastic
+variational inference objective function shown in Equation \ref{eq:SVI}.\\
+
+\newpart{5} Implement the function \verb|svl_obj|, which computes stochastic
+variational learning objective function shown in Equation \ref{eq:SVL}.\\
+
+\newpart{5} Implement the function \verb|infer|, which computes 
+exact or approximate distribution over $Z$ given $\mbf{x}$. The
+exact computation is given in Equation \ref{eq:pzgx}. 
+For the approximate computation, use black box stochastic variational
+inference by applying Autograd's automatic differentiation method to 
+the \verb|svi_obj| function, and  then use the resulting  gradient in 
+Autograd's \verb|adam| optimization method.\\
+
+\newpart{5} Implement the function \verb|fit|, which learns the
+model parameters using either direct marginal likelihood maximization,
+or maximization of the stochastic variational learning objective.
+In both cases, you can use Autograd's automatic differentiation method
+to obtain the gradients needed for learning, and Autograd's
+\verb|adam| optimization method. 
+\end{problem}
+
+\begin{problem}{25} \textbf{Inference Experiments:} In this question, you will experiment with the inference
+methods implemented in the previous question. Provide any requested output in your report, and add the corresponding code to \verb|experiments.py|.\\
+
+\newpart{5} Consider a simple instance of the FA model for $D=3$ and $K=2$. Let $\mbf{W}=[[1,1,0],[0,0,1]]$ and $\Psi$
+be equal to the identity matrix. Run the \verb|infer| method on the data case $x=[[1,1,1]]$ in both exact and approximate modes. 
+Report the exact posterior and the approximate posterior in terms of their means and covariance matrixes. 
+Use the default number of samples in the variational approximation, and 1000 optimization iterations.\\
+
+\newpart{5} Consider a second instance of the FA model for $D=3$ and $K=2$. Let $\mbf{W}=[[1,1,0],[0,1,1]]$ and $\Psi$
+be equal to the identity matrix. Again run the \verb|infer| method on the data case $x=[[1,1,1]]$ in both exact and approximate modes. 
+Report the exact posterior and the approximate posterior in terms of their means and covariance matrixes.
+Use the default number of samples in the variational approximation, and 1000 optimization iterations.\\
+
+\newpart{5} Explain why the variational approximation to the posterior $P(\mbf{Z}|\mbf{X}=\mbf{x})$ is very close to the 
+the exact result using the model parameters from part 1, but significantly different from the exact result
+using the model parameters from part 2.\\
+
+\newpart{10} Explain how the model parameters $\mbf{W}$ and $\Psi$ affect the accuracy of the variational
+approximation for this model in general. What types of settings of the parameters would result in the largest KL
+divergence from the approximate posterior to the true posterior in the case where $D=3$ and $K=2$?
+Support your answer with additional experiments.\\
+
+\end{problem}
+
+\begin{problem}{20} \textbf{Learning Experiments:}  In this question, you will experiment with 
+learning the factor analysis model using the included data set \verb|nips_train.npy|
+and \verb|nips_test.npy|. This data set consists of word counts from NIPS conference papers
+up to the year 2016. Each file contains a word count array where row $n$
+and column $d$ represent the number of times word $d$ was used in paper $n$. 
+The file \verb|nips_vocab.npy| contains an array listing the words in the same 
+order as the columns in the word count arrays (i.e.; word $d$ is given in position $d$).
+Applying factor analysis to these data is a form of topic modeling. Each row of the learned factor loading
+matrix $\mbf{W}$ is a set of weights over the words in the vocabulary. Large
+weights within a row should indicate words that commonly co-occur in the same paper.\\
+
+Provide any requested output in your report, and add the corresponding code to \verb|experiments.py|.\\
+
+\newpart{5} Run your implementation of the \verb|fit| method in both exact and 
+approximate mode on the training data with $K=10$. Report the average marginal log likelihood 
+(as computed using the \verb|marginal_likelihood| method) of the
+training data under the model fit using both exact and approximate learning. Next,
+report the average marginal log likelihood of the
+test data under the model fit using both exact and approximate learning.\\
+
+\newpart{5} Using the model fit with exact learning,
+determine the $10$ words with the highest weight under the learned 
+$\mbf{W}$ matrix for each factor $k$. 
+In a table, present the top 10 words along with their weights (sorted in decreasing order) for
+each factor $k$. \\
+
+\newpart{5} Using the model fit with approximate learning,
+determine the $10$ words with the highest weight under the learned 
+$\mbf{W}$ matrix for each factor $k$. 
+In a table, present the top 10 words along with their weights (sorted in decreasing order) for
+each factor $k$. \\
+ 
+\newpart{5} Based on the results in parts 1 to 3, comment on how much you think the variational
+approximation has decreased the effectiveness of learning.
+
+\end{problem}
+
+\showpoints
+\end{document} 
